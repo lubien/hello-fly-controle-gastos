@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gastos</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>$</text></svg>">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <h1>Controle de Gastos</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-success" onclick="novaTransacao()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nova Transação
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Summary Cards -->
+        <section class="summary-cards">
+            <div class="summary-card receitas">
+                <div class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div class="info">
+                    <h3>Receitas</h3>
+                    <div class="value" id="totalReceitas">R$ 0,00</div>
+                </div>
+            </div>
+            <div class="summary-card despesas">
+                <div class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+                </div>
+                <div class="info">
+                    <h3>Despesas</h3>
+                    <div class="value" id="totalDespesas">R$ 0,00</div>
+                </div>
+            </div>
+            <div class="summary-card saldo">
+                <div class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
+                </div>
+                <div class="info">
+                    <h3>Saldo</h3>
+                    <div class="value" id="saldoTotal">R$ 0,00</div>
+                </div>
+            </div>
+            <div class="summary-card transacoes">
+                <div class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>
+                </div>
+                <div class="info">
+                    <h3>Transações</h3>
+                    <div class="value" id="qtdTransacoes">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <select class="form-control" id="filtroMes"></select>
+            <select class="form-control" id="filtroAno"></select>
+            <button class="btn btn-outline" onclick="seedCategorias()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                Criar Categorias
+            </button>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Transactions List -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        Transações
+                    </h2>
+                </div>
+                <div class="panel-body">
+                    <div class="transaction-list" id="listaGastos">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div>
+                <div class="panel" style="margin-bottom: 1.5rem;">
+                    <div class="panel-header">
+                        <h2>🥧 Gastos por Categoria</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-container">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Evolução (Últimos 6 meses)
+                    </h2>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-container">
+                        <canvas id="chartEvolucao"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Nova Transação -->
+    <div class="modal-overlay" id="modalGasto">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Nova Transação</h3>
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+            </div>
+            <form id="formGasto">
+                <div class="modal-body">
+                    <input type="hidden" id="gasto_id" name="gasto_id">
+                    <input type="hidden" id="tipo" name="tipo" value="despesa">
+                    
+                    <!-- Tabs Tipo -->
+                    <div class="tabs">
+                        <button type="button" class="tab active" data-tipo="despesa">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                            Despesa
+                        </button>
+                        <button type="button" class="tab" data-tipo="receita">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                            Receita
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <input type="text" class="form-control" id="descricao" name="descricao" required 
+                               placeholder="Ex: Supermercado, Salário...">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="valor">Valor (R$)</label>
+                            <input type="number" class="form-control" id="valor" name="valor" 
+                                   step="0.01" min="0.01" required placeholder="0,00">
+                        </div>
+                        <div class="form-group">
+                            <label for="data">Data</label>
+                            <input type="date" class="form-control" id="data" name="data" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="categoria_id">Categoria</label>
+                            <select class="form-control" id="categoria_id" name="categoria_id">
+                                <option value="">Sem categoria</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="forma_pagamento">Forma de Pagamento</label>
+                            <select class="form-control" id="forma_pagamento" name="forma_pagamento">
+                                <option value="">Selecione...</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                <option value="Cartão de Débito">Cartão de Débito</option>
+                                <option value="PIX">PIX</option>
+                                <option value="Transferência">Transferência</option>
+                                <option value="Boleto">Boleto</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Inicializa data com hoje
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
